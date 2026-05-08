@@ -25,7 +25,7 @@ modsRoutes.post('/', async (c) => {
   const msg = createWSMessage('mods:upload', result.data);
   await forwardToAgent(c.env, serverId, msg);
 
-  await c.env.DB.prepare(
+  await c.env.mcpanel_db.prepare(
     'INSERT INTO audit_log (user_id, server_id, action, details) VALUES (?, ?, ?, ?)'
   ).bind(c.get('userId'), serverId, 'mods:upload', JSON.stringify({ filename: result.data.filename })).run();
 

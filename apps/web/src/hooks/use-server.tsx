@@ -31,13 +31,14 @@ export function ServerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubs = [
       on('server:status', (msg) => {
-        setServerStatus(msg.payload.status);
-        if (msg.payload.uptime) setMetrics((m) => ({ ...m, uptime: msg.payload.uptime }));
+        const p = msg.payload as { status: ServerStatus; uptime?: number };
+        setServerStatus(p.status);
+        if (p.uptime) setMetrics((m) => ({ ...m, uptime: p.uptime! }));
       }),
-      on('metrics:update', (msg) => setMetrics(msg.payload)),
+      on('metrics:update', (msg) => setMetrics(msg.payload as ServerMetrics)),
       on('server:log', (msg) => {
         setLogs((prev) => {
-          const next = [...prev, msg.payload];
+          const next = [...prev, msg.payload as ServerLogPayload];
           return next.length > 5000 ? next.slice(-5000) : next;
         });
       }),

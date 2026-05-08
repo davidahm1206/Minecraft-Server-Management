@@ -25,7 +25,7 @@ worldsRoutes.delete('/:name', async (c) => {
   const msg = createWSMessage('world:delete', { worldName });
   await forwardToAgent(c.env, serverId, msg);
 
-  await c.env.DB.prepare(
+  await c.env.mcpanel_db.prepare(
     'INSERT INTO audit_log (user_id, server_id, action, details) VALUES (?, ?, ?, ?)'
   ).bind(c.get('userId'), serverId, 'world:delete', JSON.stringify({ worldName })).run();
 
@@ -44,7 +44,7 @@ worldsRoutes.post('/regenerate', async (c) => {
   const msg = createWSMessage('world:regenerate', { seed: result.data.seed });
   await forwardToAgent(c.env, serverId, msg);
 
-  await c.env.DB.prepare(
+  await c.env.mcpanel_db.prepare(
     'INSERT INTO audit_log (user_id, server_id, action, details) VALUES (?, ?, ?, ?)'
   ).bind(c.get('userId'), serverId, 'world:regenerate', JSON.stringify(result.data)).run();
 

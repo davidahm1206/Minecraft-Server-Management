@@ -14,7 +14,7 @@ authRoutes.post('/login', async (c) => {
   }
 
   // Query user
-  const user = await c.env.DB.prepare(
+  const user = await c.env.mcpanel_db.prepare(
     'SELECT id, username, password_hash, role FROM users WHERE username = ?'
   ).bind(username).first<{ id: string; username: string; password_hash: string; role: string }>();
 
@@ -53,12 +53,12 @@ authRoutes.post('/login', async (c) => {
   // Store refresh token hash
   const refreshHash = await hashString(refreshToken);
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-  await c.env.DB.prepare(
+  await c.env.mcpanel_db.prepare(
     'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)'
   ).bind(user.id, refreshHash, expiresAt).run();
 
   // Audit log
-  await c.env.DB.prepare(
+  await c.env.mcpanel_db.prepare(
     'INSERT INTO audit_log (user_id, action, details) VALUES (?, ?, ?)'
   ).bind(user.id, 'login', JSON.stringify({ ip: c.req.header('cf-connecting-ip') })).run();
 
@@ -88,7 +88,7 @@ authRoutes.post('/refresh', async (c) => {
 
     // Verify refresh token exists in DB
     const tokenHash = await hashString(refreshToken);
-    const stored = await c.env.DB.prepare(
+    const stored = await c.env.mcpanel_db.prepare(
       'SELECT id FROM refresh_tokens WHERE token_hash = ? AND user_id = ? AND expires_at > datetime("now")'
     ).bind(tokenHash, payload.sub).first();
 
@@ -97,7 +97,7 @@ authRoutes.post('/refresh', async (c) => {
     }
 
     // Get user
-    const user = await c.env.DB.prepare(
+    const user = await c.env.mcpanel_db.prepare(
       'SELECT id, username, role FROM users WHERE id = ?'
     ).bind(payload.sub).first<{ id: string; username: string; role: string }>();
 
@@ -106,7 +106,7 @@ authRoutes.post('/refresh', async (c) => {
     }
 
     // Delete old refresh token
-    await c.env.DB.prepare('DELETE FROM refresh_tokens WHERE id = ?').bind(stored.id).run();
+    await c.env.mcpanel_db.prepare('DELETE FROM refresh_tokens WHERE id = ?').bind(stored.id).run();
 
     // Issue new tokens
     const newAccessToken = await new jose.SignJWT({
@@ -130,7 +130,7 @@ authRoutes.post('/refresh', async (c) => {
 
     const newRefreshHash = await hashString(newRefreshToken);
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-    await c.env.DB.prepare(
+    await c.env.mcpanel_db.prepare(
       'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)'
     ).bind(user.id, newRefreshHash, expiresAt).run();
 
@@ -147,7 +147,7 @@ authRoutes.post('/refresh', async (c) => {
 // ─── Setup (first-run admin creation) ───
 authRoutes.post('/setup', async (c) => {
   // Only allow if no users exist
-  const count = await c.env.DB.prepare('SELECT COUNT(*) as count FROM users').first<{ count: number }>();
+  const count = await c.env.mcpanel_db.prepare('SELECT COUNT(*) as count FROM users').first<{ count: number }>();
   if (count && count.count > 0) {
     return c.json({ error: 'Setup already completed' }, 403);
   }
@@ -160,7 +160,7 @@ authRoutes.post('/setup', async (c) => {
   }
 
   const passwordHash = await hashPassword(password);
-  await c.env.DB.prepare(
+  await c.env.mcpanel_db.prepare(
     'INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)'
   ).bind(username, passwordHash, 'admin').run();
 

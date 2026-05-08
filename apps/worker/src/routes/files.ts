@@ -49,7 +49,7 @@ filesRoutes.put('/write', async (c) => {
   const msg = createWSMessage('files:write', result.data);
   await forwardToAgent(c.env, serverId, msg);
 
-  await c.env.DB.prepare(
+  await c.env.mcpanel_db.prepare(
     'INSERT INTO audit_log (user_id, server_id, action, details) VALUES (?, ?, ?, ?)'
   ).bind(c.get('userId'), serverId, 'files:write', JSON.stringify({ path: result.data.path })).run();
 

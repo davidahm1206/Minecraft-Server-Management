@@ -12,7 +12,7 @@ import { rateLimitMiddleware } from './middleware/rate-limit';
 export { AgentSession } from './durable-objects/agent-session';
 
 export interface Env {
-  DB: D1Database;
+  mcpanel_db: D1Database;
   AGENT_SESSION: DurableObjectNamespace;
   JWT_SECRET: string;
   AGENT_TOKEN: string;

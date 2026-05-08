@@ -7,14 +7,14 @@ export const serverRoutes = new Hono<{ Bindings: Env; Variables: { userId: strin
 
 // ─── List Servers ───
 serverRoutes.get('/', async (c) => {
-  const servers = await c.env.DB.prepare('SELECT * FROM servers').all();
+  const servers = await c.env.mcpanel_db.prepare('SELECT * FROM servers').all();
   return c.json({ servers: servers.results });
 });
 
 // ─── Get Server Details ───
 serverRoutes.get('/:serverId', async (c) => {
   const { serverId } = c.req.param();
-  const server = await c.env.DB.prepare('SELECT * FROM servers WHERE id = ?').bind(serverId).first();
+  const server = await c.env.mcpanel_db.prepare('SELECT * FROM servers WHERE id = ?').bind(serverId).first();
   if (!server) return c.json({ error: 'Server not found' }, 404);
   return c.json({ server });
 });
@@ -25,7 +25,7 @@ serverRoutes.post('/:serverId/start', async (c) => {
   const msg = createWSMessage('server:start', {});
   await forwardToAgent(c.env, serverId, msg);
 
-  await c.env.DB.prepare(
+  await c.env.mcpanel_db.prepare(
     'INSERT INTO audit_log (user_id, server_id, action) VALUES (?, ?, ?)'
   ).bind(c.get('userId'), serverId, 'server:start').run();
 
@@ -39,7 +39,7 @@ serverRoutes.post('/:serverId/stop', async (c) => {
   const { serverId } = c.req.param();
   await forwardToAgent(c.env, serverId, msg);
 
-  await c.env.DB.prepare(
+  await c.env.mcpanel_db.prepare(
     'INSERT INTO audit_log (user_id, server_id, action, details) VALUES (?, ?, ?, ?)'
   ).bind(c.get('userId'), serverId, 'server:stop', JSON.stringify(body)).run();
 
@@ -52,7 +52,7 @@ serverRoutes.post('/:serverId/restart', async (c) => {
   const msg = createWSMessage('server:restart', {});
   await forwardToAgent(c.env, serverId, msg);
 
-  await c.env.DB.prepare(
+  await c.env.mcpanel_db.prepare(
     'INSERT INTO audit_log (user_id, server_id, action) VALUES (?, ?, ?)'
   ).bind(c.get('userId'), serverId, 'server:restart').run();
 
@@ -71,7 +71,7 @@ serverRoutes.post('/:serverId/command', async (c) => {
   const msg = createWSMessage('server:command', { command: result.data.command });
   await forwardToAgent(c.env, serverId, msg);
 
-  await c.env.DB.prepare(
+  await c.env.mcpanel_db.prepare(
     'INSERT INTO audit_log (user_id, server_id, action, details) VALUES (?, ?, ?, ?)'
   ).bind(c.get('userId'), serverId, 'server:command', JSON.stringify({ command: result.data.command })).run();
 

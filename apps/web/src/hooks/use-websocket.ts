@@ -10,7 +10,7 @@ export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null);
   const [status, setStatus] = useState<WSStatus>('disconnected');
   const listenersRef = useRef<Map<string, Set<MessageCallback>>>(new Map());
-  const reconnectTimer = useRef<ReturnType<typeof setTimeout>>();
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const connect = useCallback(() => {
     const token = localStorage.getItem('accessToken');
