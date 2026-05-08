@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .next/
+out/
 .turbo/
 .wrangler/
 .dev.vars
