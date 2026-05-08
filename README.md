@@ -85,9 +85,16 @@ Visit `http://localhost:3000/login` and click "First time? Create admin account"
 ## Deployment
 
 ### Frontend → Cloudflare Pages
-```bash
-cd apps/web && npx wrangler pages deploy .next
-```
+Connect your GitHub repo to Cloudflare Pages with these settings:
+
+| Setting | Value |
+|---------|-------|
+| Build command | `pnpm build` |
+| Build output directory | `apps/web/out` |
+| Root directory | `/` |
+| Node.js version | `22` |
+
+> The `output: 'export'` in `next.config.mjs` produces a clean static `out/` directory with no webpack cache files, staying well under Cloudflare Pages' 25 MiB per-file limit.
 
 ### Worker → Cloudflare Workers
 ```bash

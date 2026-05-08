@@ -1,8 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'export',
+  trailingSlash: true,
   transpilePackages: ['@mcpanel/shared'],
-  experimental: {
-    serverActions: { bodySizeLimit: '50mb' },
+  images: {
+    unoptimized: true, // required for static export
   },
 };
 
