@@ -49,7 +49,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
             <div>
               <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>MCPanel</div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Forge 1.20.1</div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Fabric 1.21.1</div>
             </div>
           </div>
         </div>

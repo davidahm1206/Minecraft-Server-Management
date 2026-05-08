@@ -57,7 +57,7 @@ export default function SettingsPage() {
             <h2 style={{ fontSize: '1rem', fontWeight: 600 }}>Security</h2>
           </div>
           <ul style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 2, paddingLeft: '1rem' }}>
-            <li>JWT authentication with 15min access tokens</li>
+            <li>Minecraft 1.21.1 + Fabric Loader</li>
             <li>Agent connection via outbound WebSocket (DS-Lite safe)</li>
             <li>Filesystem sandboxed to server directory</li>
             <li>Command injection prevention</li>

@@ -1,6 +1,7 @@
 // ─── Constants ───
 
-export const MC_VERSION = '1.20.1';
+export const MC_VERSION = '1.21.1';
+export const MC_LOADER = 'fabric';
 
 export const METRICS_INTERVAL_MS = 5000;
 export const HEARTBEAT_INTERVAL_MS = 30000;
@@ -16,15 +17,19 @@ export const ALLOWED_CONFIG_EXTENSIONS = [
   '.properties', '.toml', '.json', '.yml', '.yaml', '.cfg', '.conf', '.txt', '.ini',
 ];
 
-export const READ_ONLY_FILES = ['server.jar', 'eula.txt'];
+export const READ_ONLY_FILES = ['fabric-server-launch.jar', 'server.jar', 'eula.txt'];
 
 export const BLOCKED_PATH_PATTERNS = [/\.\./, /^\//,  /\0/];
 
 export const LOG_LEVELS = ['INFO', 'WARN', 'ERROR', 'DEBUG', 'UNKNOWN'] as const;
 export type LogLevel = typeof LOG_LEVELS[number];
 
+// Fabric client-only environment markers
 export const CLIENT_ONLY_PACKAGES = [
   'net.minecraft.client',
-  'net.minecraftforge.client',
   'com.mojang.blaze3d',
+  'net.fabricmc.api.ClientModInitializer',
 ];
+
+// Fabric mod environment values that indicate client-only
+export const FABRIC_CLIENT_ENVIRONMENTS = ['client'];

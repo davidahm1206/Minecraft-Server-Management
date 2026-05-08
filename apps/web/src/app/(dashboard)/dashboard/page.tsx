@@ -124,7 +124,7 @@ export default function DashboardPage() {
         <StatCard label="Players" value={`${metrics.playerCount}/${metrics.maxPlayers}`}
           icon={Users} accent="green" />
         <StatCard label="Uptime" value={formatUptime(metrics.uptime)} icon={Clock} accent="blue" />
-        <StatCard label="Version" value="1.20.1" sub="Forge" icon={Activity} accent="purple" />
+        <StatCard label="Version" value="1.21.1" sub="Fabric" icon={Activity} accent="purple" />
       </div>
 
       {/* Online Players */}

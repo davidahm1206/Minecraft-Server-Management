@@ -13,7 +13,6 @@
   "dependencies": {
     "ws": "^8.18.0",
     "adm-zip": "^0.5.16",
-    "@iarna/toml": "^2.2.5",
     "pidusage": "^3.0.2",
     "chokidar": "^4.0.0",
     "pino": "^9.6.0",

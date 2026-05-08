@@ -10,29 +10,56 @@ type LogCallback = (log: ServerLogPayload) => void;
 type PlayerCallback = (name: string, action: 'join' | 'leave') => void;
 type CrashCallback = (report: string) => void;
 
-const LOG_LEVEL_REGEX = /\[(\d{2}:\d{2}:\d{2})\]\s+\[([^\]]+)\/(INFO|WARN|ERROR|DEBUG)\]/;
+// ─── Log Parsing Regexes ───
+// Fabric / vanilla 1.21.x log format:
+//   [HH:MM:SS] [Thread/LEVEL]: message
+// Examples:
+//   [12:34:56] [Server thread/INFO]: Done (5.123s)!
+//   [12:34:56] [Server thread/WARN]: ...
+//   [12:34:56] [Netty Epoll Server IO #1/ERROR]: ...
+const LOG_LEVEL_REGEX = /^\[(\d{2}:\d{2}:\d{2})\]\s+\[([^\]]+)\/(INFO|WARN|ERROR|DEBUG)\]:\s*(.*)/;
+
+// Player join/leave — identical in Fabric and vanilla
 const PLAYER_JOIN_REGEX = /(\w+)\s+joined the game/;
 const PLAYER_LEAVE_REGEX = /(\w+)\s+left the game/;
-const TPS_REGEX = /Dim\s+\d+.*?:\s+Mean tick time:\s+([\d.]+)\s+ms/;
+
+// Server ready — same in Fabric as vanilla
 const DONE_REGEX = /Done \([\d.]+s\)!/;
+
+// TPS detection:
+// Fabric doesn't expose tick time in the log by default.
+// However, Carpet mod (common on Fabric) logs:
+//   [Server thread/INFO]: TPS from last 100 ticks: 20.0
+// And MSPT can be obtained from /tick warp output.
+// We also capture the vanilla debug.txt format as a fallback.
+const CARPET_TPS_REGEX = /TPS from last \d+ ticks:\s*([\d.]+)/;
+const MSPT_REGEX = /Mean tick time:\s*([\d.]+)\s*ms/;
+
+// Fabric-specific: mod loading complete
+const FABRIC_MODS_LOADED_REGEX = /Loading \d+ mods:/;
+
+// Server overloaded — Fabric still emits this vanilla warning
+const OVERLOADED_REGEX = /Can't keep up! Is the server overloaded\?.*running ([\d]+)ms behind/;
 
 export class LogParser {
   private logPath: string;
   private watcher: ReturnType<typeof watch> | null = null;
+  private crashWatcher: ReturnType<typeof watch> | null = null;
   private lastSize = 0;
   private onLog: LogCallback | null = null;
   private onPlayer: PlayerCallback | null = null;
   private onCrash: CrashCallback | null = null;
   private onServerReady: (() => void) | null = null;
   private _lastTps = 20.0;
+  private _lastMspt = 50.0;
+  private _overloadedMs = 0;
 
   constructor() {
     this.logPath = path.join(config.MC_SERVER_DIR, 'logs', 'latest.log');
   }
 
-  get lastTps(): number {
-    return this._lastTps;
-  }
+  get lastTps(): number { return this._lastTps; }
+  get lastMspt(): number { return this._lastMspt; }
 
   setCallbacks(opts: {
     onLog?: LogCallback;
@@ -47,12 +74,9 @@ export class LogParser {
   }
 
   start(): void {
-    // Initialize file position to end of current file
     if (existsSync(this.logPath)) {
       this.lastSize = statSync(this.logPath).size;
     }
-
-    const logsDir = path.dirname(this.logPath);
 
     this.watcher = watch(this.logPath, {
       persistent: true,
@@ -62,25 +86,23 @@ export class LogParser {
 
     this.watcher.on('change', () => this.readNewLines());
     this.watcher.on('add', () => {
-      this.lastSize = 0; // New file created, read from start
+      this.lastSize = 0;
       this.readNewLines();
     });
 
-    // Also watch crash-reports directory
+    // Watch crash-reports directory (same structure in Fabric)
     const crashDir = path.join(config.MC_SERVER_DIR, 'crash-reports');
-    if (existsSync(crashDir)) {
-      const crashWatcher = watch(crashDir, { persistent: true });
-      crashWatcher.on('add', (filePath) => {
-        this.handleCrashReport(filePath);
-      });
-    }
+    this.crashWatcher = watch(crashDir, { persistent: true, ignoreInitial: true });
+    this.crashWatcher.on('add', (filePath) => this.handleCrashReport(filePath));
 
-    logger.info('Log parser started');
+    logger.info('Fabric log parser started');
   }
 
   stop(): void {
     this.watcher?.close();
     this.watcher = null;
+    this.crashWatcher?.close();
+    this.crashWatcher = null;
   }
 
   private readNewLines(): void {
@@ -88,10 +110,7 @@ export class LogParser {
 
     const currentSize = statSync(this.logPath).size;
     if (currentSize <= this.lastSize) {
-      // File was truncated (new server start), reset
-      if (currentSize < this.lastSize) {
-        this.lastSize = 0;
-      }
+      if (currentSize < this.lastSize) this.lastSize = 0; // truncated (server restart)
       return;
     }
 
@@ -101,20 +120,14 @@ export class LogParser {
     });
 
     const rl = createInterface({ input: stream });
-
-    rl.on('line', (line) => {
-      this.parseLine(line);
-    });
-
-    rl.on('close', () => {
-      this.lastSize = currentSize;
-    });
+    rl.on('line', (line) => this.parseLine(line));
+    rl.on('close', () => { this.lastSize = currentSize; });
   }
 
   private parseLine(line: string): void {
     if (!line.trim()) return;
 
-    // Detect log level
+    // Parse Fabric/vanilla log format
     let level: LogLevel = 'UNKNOWN';
     let timestamp = '';
     const levelMatch = line.match(LOG_LEVEL_REGEX);
@@ -123,33 +136,44 @@ export class LogParser {
       level = levelMatch[3] as LogLevel;
     }
 
-    // Emit log
-    this.onLog?.({
-      line,
-      level,
-      timestamp: timestamp || new Date().toISOString(),
-    });
+    // Emit raw log
+    this.onLog?.({ line, level, timestamp: timestamp || new Date().toISOString() });
 
-    // Detect player events
+    // ─── Player events ───
     const joinMatch = line.match(PLAYER_JOIN_REGEX);
-    if (joinMatch) {
-      this.onPlayer?.(joinMatch[1], 'join');
-    }
+    if (joinMatch) this.onPlayer?.(joinMatch[1], 'join');
 
     const leaveMatch = line.match(PLAYER_LEAVE_REGEX);
-    if (leaveMatch) {
-      this.onPlayer?.(leaveMatch[1], 'leave');
+    if (leaveMatch) this.onPlayer?.(leaveMatch[1], 'leave');
+
+    // ─── TPS detection (Fabric Carpet mod or vanilla debug) ───
+    const carpetTps = line.match(CARPET_TPS_REGEX);
+    if (carpetTps) {
+      this._lastTps = Math.min(20, parseFloat(carpetTps[1]));
+      this._lastMspt = parseFloat((1000 / this._lastTps).toFixed(2));
     }
 
-    // Detect TPS from debug output
-    const tpsMatch = line.match(TPS_REGEX);
-    if (tpsMatch) {
-      const meanTickMs = parseFloat(tpsMatch[1]);
-      this._lastTps = Math.min(20, 1000 / meanTickMs);
+    const msptMatch = line.match(MSPT_REGEX);
+    if (msptMatch) {
+      const meanMs = parseFloat(msptMatch[1]);
+      this._lastMspt = meanMs;
+      this._lastTps = Math.min(20, parseFloat((1000 / meanMs).toFixed(2)));
     }
 
-    // Detect server ready
+    // ─── Overload detection → degrade TPS estimate ───
+    const overloadMatch = line.match(OVERLOADED_REGEX);
+    if (overloadMatch) {
+      this._overloadedMs = parseInt(overloadMatch[1], 10);
+      // Estimate degraded TPS from overload lag
+      const tickMs = 50 + this._overloadedMs;
+      this._lastTps = Math.min(20, parseFloat((1000 / tickMs).toFixed(2)));
+      this._lastMspt = tickMs;
+    }
+
+    // ─── Server ready ───
     if (DONE_REGEX.test(line)) {
+      this._lastTps = 20.0;
+      this._lastMspt = 50.0;
       this.onServerReady?.();
     }
   }
@@ -158,7 +182,7 @@ export class LogParser {
     try {
       const { readFile } = await import('fs/promises');
       const content = await readFile(filePath, 'utf-8');
-      logger.error('Crash report detected!');
+      logger.error({ filePath }, 'Crash report detected!');
       this.onCrash?.(content);
     } catch (err) {
       logger.error({ err }, 'Failed to read crash report');
