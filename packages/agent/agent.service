@@ -1,0 +1,29 @@
+[Unit]
+Description=MCPanel Agent - Minecraft Server Management Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=minecraft
+Group=minecraft
+WorkingDirectory=/opt/mcpanel-agent
+ExecStart=/usr/bin/node dist/index.js
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mcpanel-agent
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/minecraft/server
+PrivateTmp=true
+
+# Environment
+EnvironmentFile=/opt/mcpanel-agent/.env
+
+[Install]
+WantedBy=multi-user.target

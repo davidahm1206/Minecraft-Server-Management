@@ -1,0 +1,28 @@
+name = "mcpanel-worker"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# ─── D1 Database ───
+[[d1_databases]]
+binding = "mcpanel_db"
+database_name = "mcpanel-db"
+database_id = "e07c00d1-15ac-43b0-bf95-5fb2070dbf50"
+migrations_dir = "migrations"
+
+# ─── Durable Objects ───
+[[durable_objects.bindings]]
+name = "AGENT_SESSION"
+class_name = "AgentSession"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["AgentSession"]
+
+# ─── Environment Variables ───
+[vars]
+ENVIRONMENT = "production"
+
+# Secrets (set via `wrangler secret put`):
+# JWT_SECRET
+# AGENT_TOKEN

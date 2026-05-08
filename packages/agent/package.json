@@ -1,0 +1,32 @@
+{
+  "name": "@mcpanel/agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ws": "^8.18.0",
+    "adm-zip": "^0.5.16",
+    "@iarna/toml": "^2.2.5",
+    "pidusage": "^3.0.2",
+    "chokidar": "^4.0.0",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0",
+    "dotenv": "^16.4.0",
+    "zod": "^3.24.0",
+    "@mcpanel/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.13",
+    "@types/adm-zip": "^0.5.7",
+    "@types/pidusage": "^2.0.5",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}
