@@ -27,6 +27,23 @@ export class AgentSession extends DurableObject<Env> {
       return new Response('Agent not connected', { status: 502 });
     }
 
+    if (url.pathname === '/status' && request.method === 'GET') {
+      const sockets = this.ctx.getWebSockets();
+      let browsers = 0;
+      for (const ws of sockets) {
+        if ((ws.deserializeAttachment() as ConnectionAttachment).role === 'browser') {
+          browsers++;
+        }
+      }
+      return new Response(JSON.stringify({
+        agentConnected: !!this.agentWs,
+        browserConnections: browsers
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     const role = url.searchParams.get('role') as 'agent' | 'browser';
 
     if (!role || !['agent', 'browser'].includes(role)) {

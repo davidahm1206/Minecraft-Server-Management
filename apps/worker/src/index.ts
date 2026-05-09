@@ -33,6 +33,15 @@ app.use('*', cors({
 // ─── Health Check ───
 app.get('/health', (c) => c.json({ status: 'ok', timestamp: Date.now() }));
 
+// ─── Debug ───
+app.get('/debug', async (c) => {
+  const serverId = c.req.query('serverId') || 'default';
+  const id = c.env.AGENT_SESSION.idFromName(serverId);
+  const stub = c.env.AGENT_SESSION.get(id);
+  const res = await stub.fetch(new Request('https://internal/status'));
+  return c.json(await res.json());
+});
+
 // ─── Auth Routes (public) ───
 app.route('/api/auth', authRoutes);
 
