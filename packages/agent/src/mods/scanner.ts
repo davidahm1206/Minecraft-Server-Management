@@ -4,7 +4,7 @@ import { existsSync, statSync, readdirSync } from 'fs';
 import AdmZip from 'adm-zip';
 import { config } from '../config.js';
 import { logger } from '../utils/logger.js';
-import { MC_VERSION, FABRIC_CLIENT_ENVIRONMENTS, MAX_MOD_SIZE_BYTES } from '@mcpanel/shared';
+import { MC_VERSION, MAX_MOD_SIZE_BYTES } from '@mcpanel/shared';
 import type { ModInfo } from '@mcpanel/shared';
 
 // ─── Fabric mod.json schema (fabric.mod.json) ───
