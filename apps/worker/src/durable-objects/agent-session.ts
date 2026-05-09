@@ -69,10 +69,14 @@ export class AgentSession extends DurableObject<Env> {
     server.serializeAttachment(attachment);
 
     if (role === 'agent') {
-      // Close previous agent connection if exists
-      const existingAgent = this.agentWs;
-      if (existingAgent) {
-        try { existingAgent.close(1000, 'Replaced by new agent connection'); } catch {}
+      // Close any *other* agent connections (avoiding closing the new one)
+      for (const ws of this.ctx.getWebSockets()) {
+        if (ws !== server) {
+          const att = ws.deserializeAttachment() as ConnectionAttachment;
+          if (att?.role === 'agent') {
+            try { ws.close(1000, 'Replaced by new agent connection'); } catch {}
+          }
+        }
       }
       this.broadcast({
         type: 'agent:connected',
