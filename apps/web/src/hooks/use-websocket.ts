@@ -16,7 +16,7 @@ export function useWebSocket() {
     const token = localStorage.getItem('accessToken');
     if (!token) return;
 
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8787/ws';
+    const wsUrl = 'wss://mcpanel-worker.mc-server.workers.dev/ws';
     const url = `${wsUrl}?token=${token}&role=browser&serverId=default`;
 
     setStatus('connecting');

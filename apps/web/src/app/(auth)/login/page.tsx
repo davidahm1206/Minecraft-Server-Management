@@ -18,7 +18,8 @@ export default function LoginPage() {
 
     try {
       const endpoint = isSetup ? '/api/auth/setup' : '/api/auth/login';
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
+      const apiUrl = 'https://mcpanel-worker.mc-server.workers.dev';
+      const res = await fetch(`${apiUrl}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
