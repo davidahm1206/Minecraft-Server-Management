@@ -5,9 +5,9 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=minecraft
-Group=minecraft
-WorkingDirectory=/opt/mcpanel-agent
+User=root
+Group=root
+WorkingDirectory=/root/Minecraft-Server-Management/packages/agent
 ExecStart=/usr/bin/node dist/index.js
 Restart=always
 RestartSec=5
@@ -19,11 +19,11 @@ SyslogIdentifier=mcpanel-agent
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/home/minecraft/server
+ReadWritePaths=/root/minecraft-server
 PrivateTmp=true
 
 # Environment
-EnvironmentFile=/opt/mcpanel-agent/.env
+EnvironmentFile=/root/Minecraft-Server-Management/packages/agent/.env
 
 [Install]
 WantedBy=multi-user.target
