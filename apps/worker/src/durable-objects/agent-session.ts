@@ -8,7 +8,13 @@ interface ConnectionAttachment {
 }
 
 export class AgentSession extends DurableObject<Env> {
-  private agentWs: WebSocket | null = null;
+  private get agentWs(): WebSocket | null {
+    for (const ws of this.ctx.getWebSockets()) {
+      const att = ws.deserializeAttachment() as ConnectionAttachment;
+      if (att?.role === 'agent') return ws;
+    }
+    return null;
+  }
 
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
@@ -64,10 +70,10 @@ export class AgentSession extends DurableObject<Env> {
 
     if (role === 'agent') {
       // Close previous agent connection if exists
-      if (this.agentWs) {
-        try { this.agentWs.close(1000, 'Replaced by new agent connection'); } catch {}
+      const existingAgent = this.agentWs;
+      if (existingAgent) {
+        try { existingAgent.close(1000, 'Replaced by new agent connection'); } catch {}
       }
-      this.agentWs = server;
       this.broadcast({
         type: 'agent:connected',
         payload: {},
@@ -132,7 +138,6 @@ export class AgentSession extends DurableObject<Env> {
     const attachment = ws.deserializeAttachment() as ConnectionAttachment;
 
     if (attachment.role === 'agent') {
-      this.agentWs = null;
       this.broadcast({
         type: 'agent:disconnected',
         payload: {},
@@ -148,7 +153,6 @@ export class AgentSession extends DurableObject<Env> {
     console.error(`WebSocket error for ${attachment.role}:`, error);
 
     if (attachment.role === 'agent') {
-      this.agentWs = null;
       this.broadcast({
         type: 'agent:disconnected',
         payload: {},
