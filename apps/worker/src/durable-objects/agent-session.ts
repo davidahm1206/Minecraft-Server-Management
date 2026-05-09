@@ -55,6 +55,15 @@ export class AgentSession extends DurableObject<Env> {
         payload: {},
         timestamp: Date.now(),
       });
+    } else if (role === 'browser' && this.agentWs) {
+      // If a browser connects and the agent is already online, tell the browser immediately!
+      try {
+        server.send(JSON.stringify({
+          type: 'agent:connected',
+          payload: {},
+          timestamp: Date.now(),
+        }));
+      } catch {}
     }
 
     return new Response(null, { status: 101, webSocket: client });
