@@ -22,7 +22,7 @@ new_sqlite_classes = ["AgentSession"]
 # ─── Environment Variables ───
 [vars]
 ENVIRONMENT = "production"
+AGENT_TOKEN = "mcpanel_secure_agent_token_2026"
 
 # Secrets (set via `wrangler secret put`):
 # JWT_SECRET
-# AGENT_TOKEN
