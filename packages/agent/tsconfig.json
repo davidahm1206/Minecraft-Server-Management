@@ -1,15 +1,28 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./src",
     "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "paths": {
-      "@mcpanel/shared": ["../../packages/shared/src"],
-      "@mcpanel/shared/*": ["../../packages/shared/src/*"]
-    }
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+
+    "rootDir": ".",
+    "outDir": "dist",
+
+    "baseUrl": ".",
+
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+
+    "strict": false
   },
-  "include": ["src/**/*"]
+
+  "include": [
+    "src",
+    "../shared/src"
+  ],
+
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }
