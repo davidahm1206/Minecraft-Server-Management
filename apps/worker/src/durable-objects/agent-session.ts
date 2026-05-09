@@ -29,15 +29,16 @@ export class AgentSession extends DurableObject<Env> {
 
     if (url.pathname === '/status' && request.method === 'GET') {
       const sockets = this.ctx.getWebSockets();
-      let browsers = 0;
+      const connected = [];
       for (const ws of sockets) {
-        if ((ws.deserializeAttachment() as ConnectionAttachment).role === 'browser') {
-          browsers++;
-        }
+        const att = ws.deserializeAttachment() as ConnectionAttachment;
+        connected.push({ role: att?.role, connectedAt: att?.connectedAt });
       }
       return new Response(JSON.stringify({
         agentConnected: !!this.agentWs,
-        browserConnections: browsers
+        totalSockets: sockets.length,
+        sockets: connected,
+        envToken: this.env.AGENT_TOKEN
       }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
