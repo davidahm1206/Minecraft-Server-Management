@@ -24,7 +24,9 @@ const app = new Hono<{ Bindings: Env }>();
 // ─── Global Middleware ───
 app.use('*', logger());
 app.use('*', cors({
-  origin: ['http://localhost:3000', 'https://*.pages.dev'],
+  origin: (origin) => {
+    return origin || 'http://localhost:3000';
+  },
   credentials: true,
 }));
 
